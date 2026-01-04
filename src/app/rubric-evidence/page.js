@@ -1,4 +1,5 @@
 import SidebarNav from "../../components/SidebarNav";
+import Link from "next/link";
 
 export default function RubricEvidencePage() {
   return (
@@ -25,8 +26,28 @@ export default function RubricEvidencePage() {
                     CCC.1.1 - Understand and identify a problem
                   </div>
                   <div className="mt-2">
-                    Example: "CCC.1.1 is shown on the About Page, why MyTime Page,
-                    and Key Features Page."
+                    Example: "CCC.1.1 is shown on the{" "}
+                    <Link
+                      href="/about"
+                      className="underline underline-offset-2"
+                    >
+                      About Page
+                    </Link>
+                    ,{" "}
+                    <Link
+                      href="/why-mytime"
+                      className="underline underline-offset-2"
+                    >
+                      Why MyTime Page
+                    </Link>
+                    , and{" "}
+                    <Link
+                      href="/key-features"
+                      className="underline underline-offset-2"
+                    >
+                      Key Features Page
+                    </Link>
+                    ."
                   </div>
                 </div>
 
@@ -35,13 +56,32 @@ export default function RubricEvidencePage() {
                     CCC.1.2 - Identify and plan a solution
                   </div>
                   <div className="mt-2">
-                    Example: "CCC.1.2 is shown on the why MyTime Page and Key
-                    Features Page."
+                    Example: "CCC.1.2 is shown on the{" "}
+                    <Link
+                      href="/why-mytime"
+                      className="underline underline-offset-2"
+                    >
+                      Why MyTime Page
+                    </Link>
+                    {" "}and{" "}
+                    <Link
+                      href="/key-features"
+                      className="underline underline-offset-2"
+                    >
+                      Key Features Page
+                    </Link>
+                    ."
                   </div>
                   <div className="mt-2">
                     Example: "CCC.1.2 is also shown in the Trello linked to the
-                    why MyTime Page, which includes wireframes, tasks, a user
-                    story, etc."
+                    {" "}
+                    <Link
+                      href="/why-mytime"
+                      className="underline underline-offset-2"
+                    >
+                      Why MyTime Page
+                    </Link>
+                    , which includes wireframes, tasks, a user story, etc."
                   </div>
                 </div>
 
@@ -50,8 +90,42 @@ export default function RubricEvidencePage() {
                     CCC.1.3 - Implement a solution
                   </div>
                   <div className="mt-2">
-                    Example: "CCC.1.3 is shown on the Dashboard Page, Study
-                    Planner, Breakdown wizard, Mood Tracker, and Guided Notes."
+                    Example: "CCC.1.3 is shown on the{" "}
+                    <Link
+                      href="/dashboard"
+                      className="underline underline-offset-2"
+                    >
+                      Dashboard Page
+                    </Link>
+                    ,{" "}
+                    <Link
+                      href="/dashboard?tab=study-planner"
+                      className="underline underline-offset-2"
+                    >
+                      Study Planner
+                    </Link>
+                    ,{" "}
+                    <Link
+                      href="/dashboard?tab=breakdown-wizard"
+                      className="underline underline-offset-2"
+                    >
+                      Breakdown Wizard
+                    </Link>
+                    ,{" "}
+                    <Link
+                      href="/dashboard?tab=mood-tracker"
+                      className="underline underline-offset-2"
+                    >
+                      Mood Tracker
+                    </Link>
+                    , and{" "}
+                    <Link
+                      href="/dashboard?tab=guided-notes"
+                      className="underline underline-offset-2"
+                    >
+                      Guided Notes
+                    </Link>
+                    ."
                   </div>
                 </div>
               </section>

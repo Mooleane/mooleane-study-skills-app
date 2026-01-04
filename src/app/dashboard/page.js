@@ -6,7 +6,7 @@ import { SidebarNavWithFooter } from "../../components/SidebarNav";
 
 const TAB_PARAM_TO_LABEL = {
   "study-planner": "Study Planner",
-  "breakdown-wizard": "Breakdown wizard",
+  "breakdown-wizard": "Breakdown Wizard",
   "mood-tracker": "Mood Tracker",
   "guided-notes": "Guided Notes",
 };
@@ -1245,7 +1245,7 @@ function DashboardPageInner() {
   const BREAKDOWN_KEY = "mytime.breakdownSteps";
   const tabs = [
     "Study Planner",
-    "Breakdown wizard",
+    "Breakdown Wizard",
     "Mood Tracker",
     "Guided Notes",
   ];
@@ -2055,7 +2055,7 @@ function DashboardPageInner() {
                       onEndSession={endSession}
                     />
                   ) : null}
-                  {activeTab === "Breakdown wizard" ? (
+                  {activeTab === "Breakdown Wizard" ? (
                     <BreakdownWizardTab
                       taskName={breakdownTaskName}
                       taskDate={breakdownTaskDate}
@@ -2096,7 +2096,7 @@ function DashboardPageInner() {
                     />
                   ) : null}
                   {activeTab !== "Study Planner" &&
-                  activeTab !== "Breakdown wizard" &&
+                  activeTab !== "Breakdown Wizard" &&
                   activeTab !== "Mood Tracker" &&
                   activeTab !== "Guided Notes" ? (
                     <div className="py-12 text-center text-lg font-semibold text-zinc-800">

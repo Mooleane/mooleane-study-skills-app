@@ -228,6 +228,88 @@ function BreakdownWizardTab() {
   );
 }
 
+function MoodTrackerTab() {
+  const timeline = [
+    {
+      date: "Mon Jan 05",
+      mood: "Neutral",
+      note: "The day is starting out okay.",
+    },
+    {
+      date: "Sun Jan 04",
+      mood: "Good",
+      note: "I had a fun evening.",
+    },
+    {
+      date: "Sat Jan 03",
+      mood: "Good",
+      note: "It was relaxing today.",
+    },
+  ];
+
+  const correlations = ["Mostly Inconclusive", "Might Like Weekends More"];
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded border border-zinc-300 bg-white p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            className="h-9 w-40 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+            defaultValue=""
+            aria-label="Select Mood"
+          >
+            <option value="" disabled>
+              Select Mood
+            </option>
+            <option>Great</option>
+            <option>Good</option>
+            <option>Neutral</option>
+            <option>Stressed</option>
+            <option>Overwhelmed</option>
+          </select>
+
+          <input
+            className="h-9 w-72 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+            placeholder="Extra Notes"
+            aria-label="Extra Notes"
+          />
+
+          <button
+            type="button"
+            className="h-9 rounded border border-zinc-400 bg-white px-4 text-sm font-medium text-zinc-900"
+          >
+            Record Mood
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded border border-zinc-300 bg-white p-4">
+        <div className="text-sm font-semibold text-zinc-900">
+          Recent Mood Timeline
+        </div>
+        <ul className="mt-3 space-y-2 text-sm text-zinc-800">
+          {timeline.map((t) => (
+            <li key={t.date}>
+              {t.date} - {t.mood} - {t.note}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="rounded border border-zinc-300 bg-white p-4">
+        <div className="text-sm font-semibold text-zinc-900">
+          Mood Correlations
+        </div>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-zinc-800">
+          {correlations.map((c) => (
+            <li key={c}>{c}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const tabs = [
     "Study Planner",
@@ -308,8 +390,10 @@ export default function DashboardPage() {
                   {activeTab === "Breakdown wizard" ? (
                     <BreakdownWizardTab />
                   ) : null}
+                  {activeTab === "Mood Tracker" ? <MoodTrackerTab /> : null}
                   {activeTab !== "Study Planner" &&
-                  activeTab !== "Breakdown wizard" ? (
+                  activeTab !== "Breakdown wizard" &&
+                  activeTab !== "Mood Tracker" ? (
                     <div className="py-12 text-center text-lg font-semibold text-zinc-800">
                       [Tab Content Shown]
                     </div>

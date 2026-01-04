@@ -30,6 +30,7 @@ export default function ReflectionPage() {
                     Creating the wireframes and implementing them into the Next JS
                     project went well, and I was able to create
                     features that built off each other decently.
+                    Making the RBA was slightly tedious but worked well in the end.
                   </p>
                 </section>
 
@@ -54,9 +55,6 @@ export default function ReflectionPage() {
                     ). Satisfying the user story fully also
                     didn't go well because some features such as the calendar would
                     be too complex to satisfy for the user story considering the UI buttons.
-                    One benefit from a change during the project was adding a Regenerate Suggestions button.
-                    It saves a lot more AI tokens because there would be no other way to regenerate suggestions
-                    other than automatically, which would cost a lot for the API key.
                   </p>
                 </section>
 
@@ -81,7 +79,9 @@ export default function ReflectionPage() {
                       className="underline underline-offset-2"
                     >
                       Breakdown Wizard
-                    </Link>
+                    </Link>. One benefit from a change during the project was adding a Regenerate Suggestions button.
+                    It saves a lot more AI tokens because there would be no other way to regenerate suggestions
+                    other than automatically, which would cost a lot for the API key.
                     .
                   </p>
                 </section>

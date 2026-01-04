@@ -1,44 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Mooleane Study Skills App / MyTime
 
-## Getting Started
+## Project overview
+MyTime is an all-in-one study-skills app that combines time management, planning, and self-care check-ins. It helps students block out time for tasks, break assignments into manageable steps, and reflect on mood/work patterns so they can adjust their routine without getting overwhelmed. The app uses Google sign-in and server-side AI endpoints to generate structured planning and reflection guidance.
 
-First, run the development server:
+## Problem summary
+Many students (and busy workers) struggle to manage time and focus day-to-day. Common pain points include:
+
+- Not knowing where to start on an assignment (or starting too late)
+- Procrastinating or getting distracted mid-task
+- Feeling overwhelmed by work and falling behind
+- Not having enough time to focus on self-care
+
+Existing tools can help, but often in a narrow way:
+
+- Google Calendar is great for scheduling but doesn't guide task breakdown.
+- Daylio is quick for mood tracking but doesn't connect moods to study habits.
+- Microsoft To Do is simple, but planning support can feel limited.
+
+MyTime combines planning + reflection in one place, with guided support to simplify work into clear next steps.
+
+## Features (including AI integration)
+- Simple dashboard navigation to key areas (planner, reflection, key pages).
+- Google sign-in with access control via NextAuth (restricted allowlist).
+- Protected pages that redirect unauthenticated users to sign-in and unauthorized users to an unauthorized page.
+- Designed to be accessible, easy to navigate, and not overwhelming.
+
+Core product features:
+
+- Study planner: block out time for different tasks and start focused work sessions.
+- Breakdown wizard: simplifies larger tasks into digestible steps.
+- Mood tracker + reflection: quick mood entries and a place to notice changes over time.
+- Guided notes: supportive suggestions based on recent activity and personal notes.
+
+File text extraction for study content:
+
+- `POST /api/extract` accepts a `.txt` or `.pdf` upload and returns extracted text.
+- Uses `pdfjs-dist` on the server to extract PDF text (best with selectable-text PDFs).
+
+AI-powered server routes (AI Integration):
+
+- `POST /api/chat`: Generates a short step-by-step plan for a task.
+  - Input: task name/date/priority + optional extracted text.
+  - Output: JSON `{ "steps": ["Step 1 (30m)", ...] }`.
+- `POST /api/insights`: Generates multiple types of insights.
+  - Insights include mood correlations, mood summary, and a quick check-in.
+  - Output is constrained to JSON so the UI can render it predictably.
+- `POST /api/suggestions`: Generates supportive study-skill suggestions (guided tips) based on recent moods, work balance in study planner, and personal notes.
+
+Prompts are designed to return JSON so the UI can reliably display outputs. The model defaults to `gpt-4o-mini` and can be overridden via an environment variable.
+
+## Tech stack
+- Next.js (App Router)
+- React
+- NextAuth (Google provider)
+- Tailwind CSS
+- OpenAI (Chat Completions via `fetch`)
+- `pdfjs-dist` for PDF text extraction
+- ESLint
+- Package manager: pnpm
+
+## How to run the project
+Prereqs:
+
+- Node.js 18+ recommended
+- pnpm installed (`npm i -g pnpm`)
+
+1) Install dependencies
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2) Create your environment file
 
-## OpenAI (GPT-4o mini) Setup
+```bash
+copy .env.local.example .env.local
+```
 
-This project includes a simple server-side API route at `/api/chat` that calls OpenAI using your API key.
+3) Fill in `.env.local`
 
-- Create a `.env.local` file (not committed) based on `.env.local.example`
-- Set `OPENAI_API_KEY` (required)
-- Optionally set `OPENAI_MODEL` (defaults to `gpt-4o-mini`)
+- `OPENAI_API_KEY` (required)
+- `OPENAI_MODEL` (optional, defaults to `gpt-4o-mini`)
+- `NEXTAUTH_SECRET` and `NEXTAUTH_URL`
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Note: The sign-in flow only allows emails listed in the allowlist in `src/app/api/auth/[...nextauth]/route.js`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4) Run the dev server
 
-## Learn More
+```bash
+pnpm dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open `http://localhost:3000`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Production build:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm build
+pnpm start
+```
 
-## Deploy on Vercel
+## Reflection
+What worked:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Creating the wireframes and implementing them into the Next JS project went well, and I was able to create features that built off each other decently.
+- Making the RBA was slightly tedious but worked well in the end.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+What didn't (or was tricky):
+
+- Implementing the features into Next JS was a challenge because they all had to connect to each other, and that approach meant a lot of saving between all the different tabs for the AI to output info from other tabs to the sections that relied on it. 
+- Satisfying the user story fully didn't go well because some features such as the calendar would be too complex to satisfy for the user story considering the UI buttons. 
+
+What I'd improve next:
+
+- The appearance of the CSS (more colors/vibrancy)
+- 

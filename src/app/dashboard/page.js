@@ -49,6 +49,38 @@ function safeParseJson(value, fallback) {
   }
 }
 
+function combineDateAndTimeToMs(dateStr, timeStr) {
+  if (!dateStr || !timeStr) return null;
+  const d = new Date(`${dateStr}T${timeStr}`);
+  const ms = d.getTime();
+  return Number.isFinite(ms) ? ms : null;
+}
+
+function getTaskDurationMs(task) {
+  const start = combineDateAndTimeToMs(task?.date, task?.startTime);
+  const end = combineDateAndTimeToMs(task?.date, task?.endTime);
+  if (start == null || end == null) return null;
+  const diff = end - start;
+  return diff > 0 ? diff : null;
+}
+
+function formatDuration(ms) {
+  if (!ms || ms <= 0) return "";
+  const totalMinutes = Math.round(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0 && minutes === 0) {
+    return `${hours} Hour${hours === 1 ? "" : "s"}`;
+  }
+  if (hours === 0) {
+    return `${minutes} Minute${minutes === 1 ? "" : "s"}`;
+  }
+  return `${hours} Hour${hours === 1 ? "" : "s"} ${minutes} Minute${
+    minutes === 1 ? "" : "s"
+  }`;
+}
+
 function getId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -70,14 +102,29 @@ function computeCategoryCounts(categories, tasks) {
 function StudyPlannerTab({
   categories,
   tasks,
+  nowMs,
+  activeSession,
   onCreateTask,
   onRemoveTask,
   onAddCategory,
+  onStartSession,
+  onEndSession,
 }) {
   const [category, setCategory] = React.useState(categories[0] ?? "Study");
   const [label, setLabel] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [date, setDate] = React.useState("");
+  const [startTime, setStartTime] = React.useState("");
+  const [endTime, setEndTime] = React.useState("");
+
+  const canCreate = React.useMemo(() => {
+    const trimmedLabel = label.trim();
+    if (!trimmedLabel) return false;
+    if (!date.trim() || !startTime || !endTime) return false;
+    const startMs = combineDateAndTimeToMs(date.trim(), startTime);
+    const endMs = combineDateAndTimeToMs(date.trim(), endTime);
+    return startMs != null && endMs != null && endMs > startMs;
+  }, [label, date, startTime, endTime]);
 
   React.useEffect(() => {
     if (!categories.includes(category)) {
@@ -88,6 +135,19 @@ function StudyPlannerTab({
   const sortedTasks = React.useMemo(() => {
     return [...tasks].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
   }, [tasks]);
+
+  const sessionRemainingMs = React.useMemo(() => {
+    if (!activeSession?.endsAt) return null;
+    return Math.max(0, activeSession.endsAt - nowMs);
+  }, [activeSession, nowMs]);
+
+  const sessionRemainingLabel = React.useMemo(() => {
+    if (sessionRemainingMs == null) return "";
+    const totalSeconds = Math.ceil(sessionRemainingMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  }, [sessionRemainingMs]);
 
   const counts = React.useMemo(() => {
     return computeCategoryCounts(categories, tasks);
@@ -118,7 +178,23 @@ function StudyPlannerTab({
           </div>
         ) : null}
 
-        {sortedTasks.map((t) => (
+        {sortedTasks.map((t) => {
+          const plannedStartMs = combineDateAndTimeToMs(t.date, t.startTime);
+          const plannedEndMs = combineDateAndTimeToMs(t.date, t.endTime);
+          const durationMs = getTaskDurationMs(t);
+          const durationLabel = durationMs ? formatDuration(durationMs) : "";
+          const statusLabel =
+            plannedStartMs != null && nowMs < plannedStartMs ? "WAIT" : "START";
+          const isSessionForTask = activeSession?.taskId === t.id;
+          const canStartSession =
+            !isSessionForTask &&
+            !activeSession &&
+            durationMs != null &&
+            plannedStartMs != null &&
+            nowMs >= plannedStartMs;
+          const canEndSession = isSessionForTask;
+
+          return (
           <div
             key={t.id}
             className="flex items-center justify-between gap-3 rounded border border-zinc-300 bg-white px-3 py-2 text-sm"
@@ -133,8 +209,39 @@ function StudyPlannerTab({
             </button>
 
             <div className="min-w-0 flex-1 text-zinc-800">
-              [{t.date || "No date"} {t.category}] {t.label} - [{t.status}]
+              [{t.date || "No date"}{t.startTime ? ` ${t.startTime}` : ""}
+              {t.endTime ? `-${t.endTime}` : ""} {t.category}] {t.label}
+              {durationLabel ? ` (${durationLabel})` : ""}
+              {isSessionForTask && sessionRemainingLabel
+                ? ` (Session: ${sessionRemainingLabel})`
+                : ""}
             </div>
+
+            {canEndSession ? (
+              <button
+                type="button"
+                className="flex-none text-xs font-medium underline text-zinc-800"
+                onClick={() => onEndSession()}
+              >
+                [END]
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={
+                  "flex-none text-xs font-medium underline " +
+                  (canStartSession ? "text-zinc-800" : "text-zinc-400")
+                }
+                onClick={() => {
+                  if (!canStartSession) return;
+                  onStartSession(t.id);
+                }}
+                aria-disabled={!canStartSession}
+                disabled={!canStartSession}
+              >
+                [START]
+              </button>
+            )}
 
             <button
               type="button"
@@ -148,66 +255,164 @@ function StudyPlannerTab({
               [View Desc]
             </button>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="rounded border border-zinc-300 bg-white p-4">
         <div className="mb-3 text-sm font-semibold text-zinc-900">New Task</div>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            className="h-9 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            aria-label="Category"
-          >
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <input
-            className="h-9 w-44 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
-            placeholder="Task Label"
-            aria-label="Task Label"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-          />
-          <input
-            className="h-9 w-56 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
-            placeholder="Task Description"
-            aria-label="Task Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <input
-            className="h-9 w-36 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
-            type="date"
-            aria-label="Task Date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-          <button
-            type="button"
-            className="h-9 rounded border border-zinc-400 bg-white px-4 text-sm font-medium text-zinc-900"
-            onClick={() => {
-              const trimmedLabel = label.trim();
-              if (!trimmedLabel) return;
+        <div className="mb-3 text-xs text-zinc-600">
+          Choose a date, then set a start and end time.
+        </div>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex flex-col">
+            <label
+              htmlFor="new-task-category"
+              className="mb-1 text-[11px] text-zinc-700"
+            >
+              Task type
+            </label>
+            <select
+              id="new-task-category"
+              className="h-9 w-36 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              aria-label="Category"
+            >
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            </div>
 
-              onCreateTask({
-                category,
-                label: trimmedLabel,
-                description: description.trim(),
-                date: date.trim(),
-              });
+            <div className="flex flex-col">
+            <label
+              htmlFor="new-task-label"
+              className="mb-1 text-[11px] text-zinc-700"
+            >
+              Task label
+            </label>
+            <input
+              id="new-task-label"
+              className="h-9 w-36 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+              placeholder="e.g., Read Ch 3"
+              aria-label="Task Label"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+            />
+            </div>
 
-              setLabel("");
-              setDescription("");
-              setDate("");
-            }}
-          >
-            Create
-          </button>
+            <div className="flex flex-col">
+            <label
+              htmlFor="new-task-description"
+              className="mb-1 text-[11px] text-zinc-700"
+            >
+              Task description
+            </label>
+            <input
+              id="new-task-description"
+              className="h-9 w-56 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+              placeholder="Optional details"
+              aria-label="Task Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex flex-col">
+              <label
+                htmlFor="new-task-date"
+                className="mb-1 text-[11px] text-zinc-700"
+              >
+                Date
+              </label>
+              <input
+                id="new-task-date"
+                className="h-9 w-40 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+                type="date"
+                aria-label="Task Date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col">
+              <label
+                htmlFor="new-task-start"
+                className="mb-1 text-[11px] text-zinc-700"
+              >
+                Start time
+              </label>
+              <input
+                id="new-task-start"
+                className="h-9 w-32 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+                type="time"
+                aria-label="Start Time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col">
+              <label
+                htmlFor="new-task-end"
+                className="mb-1 text-[11px] text-zinc-700"
+              >
+                End time
+              </label>
+              <input
+                id="new-task-end"
+                className="h-9 w-32 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+                type="time"
+                aria-label="End Time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+              />
+            </div>
+
+            <button
+              type="button"
+              className="h-9 rounded border border-zinc-400 bg-white px-4 text-sm font-medium text-zinc-900"
+              disabled={!canCreate}
+              aria-disabled={!canCreate}
+              title={
+                canCreate
+                  ? "Create the task"
+                  : "Enter a label, date, start time, and end time (end after start)."
+              }
+              onClick={() => {
+                const trimmedLabel = label.trim();
+                if (!trimmedLabel) return;
+
+                const startMs = combineDateAndTimeToMs(date.trim(), startTime);
+                const endMs = combineDateAndTimeToMs(date.trim(), endTime);
+                if (!date.trim() || !startTime || !endTime) return;
+                if (startMs == null || endMs == null || endMs <= startMs) return;
+
+                onCreateTask({
+                  category,
+                  label: trimmedLabel,
+                  description: description.trim(),
+                  date: date.trim(),
+                  startTime,
+                  endTime,
+                });
+
+                setLabel("");
+                setDescription("");
+                setDate("");
+                setStartTime("");
+                setEndTime("");
+              }}
+            >
+              Create
+            </button>
+          </div>
         </div>
       </div>
 
@@ -487,6 +692,17 @@ export default function DashboardPage() {
     return Array.isArray(stored) ? stored : [];
   });
 
+  const [activeSession, setActiveSession] = React.useState(() => {
+    if (typeof window === "undefined") return null;
+    const stored = safeParseJson(
+      window.localStorage.getItem("mytime.activeSession"),
+      null
+    );
+    return stored && typeof stored === "object" ? stored : null;
+  });
+
+  const [nowMs, setNowMs] = React.useState(() => Date.now());
+
   const [activeTab, setActiveTab] = React.useState(
     getInitialTabLabel(tabParam) ?? "Study Planner"
   );
@@ -519,6 +735,35 @@ export default function DashboardPage() {
     }
   }, [tasks]);
 
+  React.useEffect(() => {
+    try {
+      if (!activeSession) {
+        window.localStorage.removeItem("mytime.activeSession");
+      } else {
+        window.localStorage.setItem(
+          "mytime.activeSession",
+          JSON.stringify(activeSession)
+        );
+      }
+    } catch {
+      // ignore
+    }
+  }, [activeSession]);
+
+  React.useEffect(() => {
+    const id = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  React.useEffect(() => {
+    if (!activeSession?.endsAt) return;
+    if (nowMs >= activeSession.endsAt) {
+      setActiveSession(null);
+    }
+  }, [activeSession, nowMs]);
+
   const latestThree = React.useMemo(() => {
     return [...tasks]
       .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
@@ -544,6 +789,8 @@ export default function DashboardPage() {
         label,
         description,
         date,
+        startTime: arguments[0]?.startTime ?? "",
+        endTime: arguments[0]?.endTime ?? "",
         status: "WAIT",
         createdAt: Date.now(),
       },
@@ -553,6 +800,30 @@ export default function DashboardPage() {
 
   function removeTask(id) {
     setTasks((prev) => prev.filter((t) => t.id !== id));
+    setActiveSession((prev) => (prev?.taskId === id ? null : prev));
+  }
+
+  function startSession(taskId) {
+    if (activeSession && activeSession.taskId !== taskId) return;
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const durationMs = getTaskDurationMs(task);
+    if (!durationMs) return;
+
+    const plannedStartMs = combineDateAndTimeToMs(task.date, task.startTime);
+    if (plannedStartMs == null) return;
+    if (nowMs < plannedStartMs) return;
+
+    setActiveSession({
+      taskId,
+      startedAt: nowMs,
+      endsAt: nowMs + durationMs,
+    });
+  }
+
+  function endSession() {
+    setActiveSession(null);
   }
 
   const todayLabel = React.useMemo(() => {
@@ -587,14 +858,48 @@ export default function DashboardPage() {
                         </li>
                       ) : null}
 
-                      {latestThree.map((t) => (
+                      {latestThree.map((t) => {
+                        const plannedStartMs = combineDateAndTimeToMs(
+                          t.date,
+                          t.startTime
+                        );
+                        const durationMs = getTaskDurationMs(t);
+                        const durationLabel = durationMs
+                          ? formatDuration(durationMs)
+                          : "";
+                        const statusLabel =
+                          plannedStartMs != null && nowMs < plannedStartMs
+                            ? "WAIT"
+                            : "START";
+                        const isSessionForTask = activeSession?.taskId === t.id;
+                        const remainingLabel = isSessionForTask
+                          ? (() => {
+                              const remaining = Math.max(
+                                0,
+                                (activeSession?.endsAt ?? 0) - nowMs
+                              );
+                              const totalSeconds = Math.ceil(remaining / 1000);
+                              const minutes = Math.floor(totalSeconds / 60);
+                              const seconds = totalSeconds % 60;
+                              return `${minutes}:${String(seconds).padStart(
+                                2,
+                                "0"
+                              )}`;
+                            })()
+                          : "";
+
+                        return (
                         <li
                           key={t.id}
                           className="rounded border border-zinc-300 px-3 py-2"
                         >
-                          [{t.date || "No date"} {t.category}] {t.label}
+                          [{t.date || "No date"}{t.startTime ? ` ${t.startTime}` : ""}
+                          {t.endTime ? `-${t.endTime}` : ""} {t.category}] {t.label}
+                          {durationLabel ? ` (${durationLabel})` : ""}
+                          {remainingLabel ? ` (Session: ${remainingLabel})` : ""}
                         </li>
-                      ))}
+                        );
+                      })}
                     </ul>
                   </div>
                 </section>
@@ -636,9 +941,13 @@ export default function DashboardPage() {
                     <StudyPlannerTab
                       categories={categories}
                       tasks={tasks}
+                      nowMs={nowMs}
+                      activeSession={activeSession}
                       onCreateTask={createTask}
                       onRemoveTask={removeTask}
                       onAddCategory={addCategory}
+                      onStartSession={startSession}
+                      onEndSession={endSession}
                     />
                   ) : null}
                   {activeTab === "Breakdown wizard" ? (

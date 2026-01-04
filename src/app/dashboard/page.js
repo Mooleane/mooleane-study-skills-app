@@ -18,7 +18,7 @@ const DEFAULT_BREAKDOWN_STEPS = [
   "First revision (30m)",
 ];
 
-const AI_PLACEHOLDER_TEXT = "Press Regenerate Suggestion to recieve results.";
+const AI_PLACEHOLDER_TEXT = "Press Regenerate Suggestions to recieve results.";
 
 function getInitialTabLabel(tabParam) {
   if (!tabParam) return null;
@@ -85,9 +85,8 @@ function formatDuration(ms) {
   if (hours === 0) {
     return `${minutes} Minute${minutes === 1 ? "" : "s"}`;
   }
-  return `${hours} Hour${hours === 1 ? "" : "s"} ${minutes} Minute${
-    minutes === 1 ? "" : "s"
-  }`;
+  return `${hours} Hour${hours === 1 ? "" : "s"} ${minutes} Minute${minutes === 1 ? "" : "s"
+    }`;
 }
 
 function getId() {
@@ -535,59 +534,59 @@ function StudyPlannerTab({
         <div className="space-y-2">
           <div className="flex flex-wrap items-end gap-2">
             <div className="flex flex-col">
-            <label
-              htmlFor="new-task-category"
-              className="mb-1 text-[11px] text-zinc-700"
-            >
-              Task type
-            </label>
-            <select
-              id="new-task-category"
-              className="h-9 w-36 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              aria-label="Category"
-            >
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+              <label
+                htmlFor="new-task-category"
+                className="mb-1 text-[11px] text-zinc-700"
+              >
+                Task type
+              </label>
+              <select
+                id="new-task-category"
+                className="h-9 w-36 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                aria-label="Category"
+              >
+                {categories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex flex-col">
-            <label
-              htmlFor="new-task-label"
-              className="mb-1 text-[11px] text-zinc-700"
-            >
-              Task label
-            </label>
-            <input
-              id="new-task-label"
-              className="h-9 w-36 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
-              placeholder="e.g., Read Ch 3"
-              aria-label="Task Label"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-            />
+              <label
+                htmlFor="new-task-label"
+                className="mb-1 text-[11px] text-zinc-700"
+              >
+                Task label
+              </label>
+              <input
+                id="new-task-label"
+                className="h-9 w-36 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+                placeholder="e.g., Read Ch 3"
+                aria-label="Task Label"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+              />
             </div>
 
             <div className="flex flex-col">
-            <label
-              htmlFor="new-task-description"
-              className="mb-1 text-[11px] text-zinc-700"
-            >
-              Task description
-            </label>
-            <input
-              id="new-task-description"
-              className="h-9 w-56 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
-              placeholder="Optional details"
-              aria-label="Task Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
+              <label
+                htmlFor="new-task-description"
+                className="mb-1 text-[11px] text-zinc-700"
+              >
+                Task description
+              </label>
+              <input
+                id="new-task-description"
+                className="h-9 w-56 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+                placeholder="Optional details"
+                aria-label="Task Description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </div>
           </div>
 
@@ -1146,8 +1145,8 @@ function GuidedNotesTab({ quickCheck, nextAssignment, guidedTips, aiReady }) {
       : `Mood: ${AI_PLACEHOLDER_TEXT}`;
     const wbLine = aiReady
       ? `Work Balance: ${String(
-          quickCheck?.workBalance || "(No scheduled tasks yet)"
-        )}`
+        quickCheck?.workBalance || "(No scheduled tasks yet)"
+      )}`
       : `Work Balance: ${AI_PLACEHOLDER_TEXT}`;
     const assignmentLine = `Assignment: ${String(
       nextAssignment || "(No upcoming scheduled tasks)"
@@ -1202,23 +1201,23 @@ function GuidedNotesTab({ quickCheck, nextAssignment, guidedTips, aiReady }) {
 
       <section className="rounded border border-zinc-300 bg-white p-4">
         <div className="text-sm font-semibold text-zinc-900">Personal Notes</div>
-          <textarea
-            className="min-h-28 w-full resize-none rounded border border-zinc-300 bg-white p-2 text-sm text-zinc-800"
-            aria-label="Personal Notes"
-            value={personalNotes}
-            onChange={(e) => setPersonalNotes(e.target.value)}
-          />
-          <div className="mt-2 flex items-center gap-3">
-            <button
-              type="button"
-              className="h-9 rounded border border-zinc-400 bg-white px-4 text-sm font-medium text-zinc-900"
-              onClick={saveNotes}
-            >
-              Save Notes
-            </button>
-            {saveStatus ? (
-              <div className="text-xs text-zinc-700">{saveStatus}</div>
-            ) : null}
+        <textarea
+          className="min-h-28 w-full resize-none rounded border border-zinc-300 bg-white p-2 text-sm text-zinc-800"
+          aria-label="Personal Notes"
+          value={personalNotes}
+          onChange={(e) => setPersonalNotes(e.target.value)}
+        />
+        <div className="mt-2 flex items-center gap-3">
+          <button
+            type="button"
+            className="h-9 rounded border border-zinc-400 bg-white px-4 text-sm font-medium text-zinc-900"
+            onClick={saveNotes}
+          >
+            Save Notes
+          </button>
+          {saveStatus ? (
+            <div className="text-xs text-zinc-700">{saveStatus}</div>
+          ) : null}
         </div>
       </section>
 
@@ -1970,31 +1969,31 @@ function DashboardPageInner() {
                         const isSessionForTask = activeSession?.taskId === t.id;
                         const remainingLabel = isSessionForTask
                           ? (() => {
-                              const remaining = Math.max(
-                                0,
-                                (activeSession?.endsAt ?? 0) - nowMs
-                              );
-                              const totalSeconds = Math.ceil(remaining / 1000);
-                              const minutes = Math.floor(totalSeconds / 60);
-                              const seconds = totalSeconds % 60;
-                              return `${minutes}:${String(seconds).padStart(
-                                2,
-                                "0"
-                              )}`;
-                            })()
+                            const remaining = Math.max(
+                              0,
+                              (activeSession?.endsAt ?? 0) - nowMs
+                            );
+                            const totalSeconds = Math.ceil(remaining / 1000);
+                            const minutes = Math.floor(totalSeconds / 60);
+                            const seconds = totalSeconds % 60;
+                            return `${minutes}:${String(seconds).padStart(
+                              2,
+                              "0"
+                            )}`;
+                          })()
                           : "";
 
                         return (
-                        <li
-                          key={t.id}
-                          className="rounded border border-zinc-300 px-3 py-2"
-                        >
-                          [{t.date || "No date"}{t.startTime ? ` ${t.startTime}` : ""}
-                          {t.endTime ? `-${t.endTime}` : ""} {t.category}] {t.label}
-                          {durationLabel ? ` (${durationLabel})` : ""}
-                          {` - [${statusLabel}]`}
-                          {remainingLabel ? ` (Session: ${remainingLabel})` : ""}
-                        </li>
+                          <li
+                            key={t.id}
+                            className="rounded border border-zinc-300 px-3 py-2"
+                          >
+                            [{t.date || "No date"}{t.startTime ? ` ${t.startTime}` : ""}
+                            {t.endTime ? `-${t.endTime}` : ""} {t.category}] {t.label}
+                            {durationLabel ? ` (${durationLabel})` : ""}
+                            {` - [${statusLabel}]`}
+                            {remainingLabel ? ` (Session: ${remainingLabel})` : ""}
+                          </li>
                         );
                       })}
                     </ul>
@@ -2094,9 +2093,9 @@ function DashboardPageInner() {
                     />
                   ) : null}
                   {activeTab !== "Study Planner" &&
-                  activeTab !== "Breakdown Wizard" &&
-                  activeTab !== "Mood Tracker" &&
-                  activeTab !== "Guided Notes" ? (
+                    activeTab !== "Breakdown Wizard" &&
+                    activeTab !== "Mood Tracker" &&
+                    activeTab !== "Guided Notes" ? (
                     <div className="py-12 text-center text-lg font-semibold text-zinc-800">
                       [Tab Content Shown]
                     </div>

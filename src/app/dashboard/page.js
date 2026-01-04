@@ -151,6 +151,83 @@ function StudyPlannerTab() {
   );
 }
 
+function BreakdownWizardTab() {
+  const steps = [
+    "Research context (30m)",
+    "Outline key points (20m)",
+    "Draft introduction (45m)",
+    "First revision (30m)",
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          className="h-9 w-40 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+          placeholder="Task Date"
+          aria-label="Task Date"
+        />
+        <select
+          className="h-9 w-48 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+          defaultValue=""
+          aria-label="Priority"
+        >
+          <option value="" disabled>
+            Priority
+          </option>
+          <option>Low</option>
+          <option>Medium</option>
+          <option>High</option>
+        </select>
+      </div>
+
+      <div className="rounded border border-zinc-300 bg-white p-8">
+        <div className="grid min-h-32 place-items-center rounded border border-zinc-300 bg-zinc-50 px-4 py-10 text-sm font-medium text-zinc-700">
+          Import .txt/.pdf file
+        </div>
+      </div>
+
+      <hr className="border-zinc-300" />
+
+      <div>
+        <div className="text-sm font-semibold text-zinc-900">Suggested Steps</div>
+        <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-zinc-800">
+          {steps.map((s) => (
+            <li key={s}>{s}</li>
+          ))}
+        </ol>
+
+        <div className="mt-6 flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="rounded border border-zinc-400 bg-white px-4 py-2 text-xs font-medium text-zinc-800"
+          >
+            Edit Step
+          </button>
+          <button
+            type="button"
+            className="rounded border border-zinc-400 bg-white px-4 py-2 text-xs font-medium text-zinc-800"
+          >
+            Delete Step
+          </button>
+          <button
+            type="button"
+            className="rounded border border-zinc-400 bg-white px-4 py-2 text-xs font-medium text-zinc-800"
+          >
+            Assign to Planner
+          </button>
+          <button
+            type="button"
+            className="rounded border border-zinc-400 bg-white px-4 py-2 text-xs font-medium text-zinc-800"
+          >
+            Assign All to Planner
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const tabs = [
     "Study Planner",
@@ -227,13 +304,16 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="mt-4 rounded border border-zinc-400 bg-white p-6">
-                  {activeTab === "Study Planner" ? (
-                    <StudyPlannerTab />
-                  ) : (
+                  {activeTab === "Study Planner" ? <StudyPlannerTab /> : null}
+                  {activeTab === "Breakdown wizard" ? (
+                    <BreakdownWizardTab />
+                  ) : null}
+                  {activeTab !== "Study Planner" &&
+                  activeTab !== "Breakdown wizard" ? (
                     <div className="py-12 text-center text-lg font-semibold text-zinc-800">
                       [Tab Content Shown]
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>

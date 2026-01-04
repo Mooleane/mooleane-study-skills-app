@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { label: "Key Features", href: "/key-features" },
   { label: "Dashboard", href: "/dashboard" },
   { label: "Rubric Evidence", href: "/rubric-evidence" },
-  { label: "Reflection", href: "#" },
+  { label: "Reflection", href: "/reflection" },
 ];
 
 export default function SidebarNav() {

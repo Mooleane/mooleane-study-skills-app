@@ -18,6 +18,8 @@ const DEFAULT_BREAKDOWN_STEPS = [
   "First revision (30m)",
 ];
 
+const AI_PLACEHOLDER_TEXT = "Press Regenerate Suggestion to recieve results.";
+
 function getInitialTabLabel(tabParam) {
   if (!tabParam) return null;
 
@@ -1009,12 +1011,6 @@ function BreakdownWizardTab({
           >
             Assign to Planner
           </button>
-          <button
-            type="button"
-            className="rounded border border-zinc-400 bg-white px-4 py-2 text-xs font-medium text-zinc-800"
-          >
-            Assign All to Planner
-          </button>
         </div>
       </div>
     </div>
@@ -1024,6 +1020,7 @@ function BreakdownWizardTab({
 function MoodTrackerTab({
   timeline,
   correlations,
+  aiReady,
   onRecordMood,
   onDeleteMoodEntry,
 }) {
@@ -1128,27 +1125,35 @@ function MoodTrackerTab({
         <div className="text-sm font-semibold text-zinc-900">
           Mood Correlations
         </div>
-        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-zinc-800">
-          {correlations.map((c) => (
-            <li key={c}>{c}</li>
-          ))}
-        </ul>
+        {aiReady ? (
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-zinc-800">
+            {correlations.map((c) => (
+              <li key={c}>{c}</li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-3 text-sm text-zinc-700">{AI_PLACEHOLDER_TEXT}</div>
+        )}
       </div>
     </div>
   );
 }
 
-function GuidedNotesTab({ quickCheck, nextAssignment, guidedTips }) {
+function GuidedNotesTab({ quickCheck, nextAssignment, guidedTips, aiReady }) {
   const recentActivity = React.useMemo(() => {
-    const moodLine = `Mood: ${String(quickCheck?.mood || "(No mood entries yet)")}`;
-    const wbLine = `Work Balance: ${String(
-      quickCheck?.workBalance || "(No scheduled tasks yet)"
-    )}`;
+    const moodLine = aiReady
+      ? `Mood: ${String(quickCheck?.mood || "(No mood entries yet)")}`
+      : `Mood: ${AI_PLACEHOLDER_TEXT}`;
+    const wbLine = aiReady
+      ? `Work Balance: ${String(
+          quickCheck?.workBalance || "(No scheduled tasks yet)"
+        )}`
+      : `Work Balance: ${AI_PLACEHOLDER_TEXT}`;
     const assignmentLine = `Assignment: ${String(
       nextAssignment || "(No upcoming scheduled tasks)"
     )}`;
     return [moodLine, wbLine, assignmentLine];
-  }, [quickCheck, nextAssignment]);
+  }, [quickCheck, nextAssignment, aiReady]);
 
   const [personalNotes, setPersonalNotes] = React.useState(
     "- I have been feeling a bit bored lately\n- Work is tiring me out"
@@ -1221,16 +1226,14 @@ function GuidedNotesTab({ quickCheck, nextAssignment, guidedTips }) {
 
       <section className="rounded border border-zinc-300 bg-white p-4">
         <div className="text-sm font-semibold text-zinc-900">Suggested Tips</div>
-        {Array.isArray(guidedTips) && guidedTips.length > 0 ? (
+        {aiReady && Array.isArray(guidedTips) && guidedTips.length > 0 ? (
           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-zinc-800">
             {guidedTips.map((t) => (
               <li key={t}>{t}</li>
             ))}
           </ul>
         ) : (
-          <div className="mt-3 text-sm text-zinc-700">
-            Press <span className="font-semibold">Regenerate Suggestions</span> to get tips.
-          </div>
+          <div className="mt-3 text-sm text-zinc-700">{AI_PLACEHOLDER_TEXT}</div>
         )}
       </section>
     </div>
@@ -1274,6 +1277,7 @@ function DashboardPageInner() {
   );
 
   const [aiBundle, setAiBundle] = React.useState(aiFallback);
+  const aiReady = Boolean(aiBundle?.generatedAt);
 
   const [breakdownSteps, setBreakdownSteps] = React.useState([]);
   const [breakdownContext, setBreakdownContext] = React.useState({
@@ -2004,15 +2008,21 @@ function DashboardPageInner() {
                     Quick Check
                   </h2>
                   <div className="mt-2 rounded border border-zinc-400 bg-white p-4 text-sm text-zinc-800">
-                    <p>
-                      <span className="font-semibold">Mood:</span> {aiBundle.quickCheck.mood}
-                    </p>
-                    <p className="mt-2">
-                      <span className="font-semibold">Work Balance:</span> {aiBundle.quickCheck.workBalance}
-                    </p>
-                    <p className="mt-2">
-                      <span className="font-semibold">Tip:</span> {aiBundle.quickCheck.tip}
-                    </p>
+                    {aiReady ? (
+                      <>
+                        <p>
+                          <span className="font-semibold">Mood:</span> {aiBundle.quickCheck.mood}
+                        </p>
+                        <p className="mt-2">
+                          <span className="font-semibold">Work Balance:</span> {aiBundle.quickCheck.workBalance}
+                        </p>
+                        <p className="mt-2">
+                          <span className="font-semibold">Tip:</span> {aiBundle.quickCheck.tip}
+                        </p>
+                      </>
+                    ) : (
+                      <div className="text-zinc-700">{AI_PLACEHOLDER_TEXT}</div>
+                    )}
                   </div>
                 </section>
               </div>
@@ -2072,6 +2082,7 @@ function DashboardPageInner() {
                     <MoodTrackerTab
                       timeline={moods}
                       correlations={aiBundle.moodCorrelations}
+                      aiReady={aiReady}
                       onRecordMood={recordMoodEntry}
                       onDeleteMoodEntry={deleteMoodEntry}
                     />
@@ -2081,6 +2092,7 @@ function DashboardPageInner() {
                       quickCheck={aiBundle.quickCheck}
                       nextAssignment={nextUpcomingAssignment}
                       guidedTips={aiBundle.guidedTips}
+                      aiReady={aiReady}
                     />
                   ) : null}
                   {activeTab !== "Study Planner" &&

@@ -16,7 +16,7 @@ export default function WhyMyTimePage() {
                 { label: "Home", href: "/" },
                 { label: "About", href: "/about" },
                 { label: "Why MyTime?", href: "/why-mytime" },
-                { label: "Key Features", href: "#" },
+                { label: "Key Features", href: "/key-features" },
                 { label: "Dashboard", href: "#" },
                 { label: "Built Evidence", href: "#" },
                 { label: "Reflection", href: "#" },

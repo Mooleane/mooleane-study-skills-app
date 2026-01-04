@@ -1202,7 +1202,6 @@ function GuidedNotesTab({ quickCheck, nextAssignment, guidedTips, aiReady }) {
 
       <section className="rounded border border-zinc-300 bg-white p-4">
         <div className="text-sm font-semibold text-zinc-900">Personal Notes</div>
-        <div className="mt-3 rounded border border-zinc-300 bg-white p-4">
           <textarea
             className="min-h-28 w-full resize-none rounded border border-zinc-300 bg-white p-2 text-sm text-zinc-800"
             aria-label="Personal Notes"
@@ -1220,7 +1219,6 @@ function GuidedNotesTab({ quickCheck, nextAssignment, guidedTips, aiReady }) {
             {saveStatus ? (
               <div className="text-xs text-zinc-700">{saveStatus}</div>
             ) : null}
-          </div>
         </div>
       </section>
 

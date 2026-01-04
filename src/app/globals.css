@@ -16,6 +16,12 @@ html {
   scroll-behavior: smooth;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -27,6 +33,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -38,8 +46,18 @@ button[class*="border"] {
 }
 
 a[class*="border"]:hover,
-button[class*="border"]:hover {
+a[class*="border"]:hover {
   background-color: #f4f4f5;
+}
+
+/* Keep buttons white (including hover) */
+button[class*="border"] {
+  background-color: #ffffff;
+}
+
+button[class*="border"]:hover {
+  background-color: #ffffff;
+  border-color: #a1a1aa;
 }
 
 /* Link styling */

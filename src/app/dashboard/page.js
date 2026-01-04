@@ -1,6 +1,165 @@
+"use client";
+
+import React from "react";
 import SidebarNav from "../../components/SidebarNav";
 
+function TabButton({ label, active, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        "rounded border border-zinc-400 px-3 py-2 text-xs font-medium " +
+        (active
+          ? "bg-zinc-100 text-zinc-900"
+          : "bg-white text-zinc-800")
+      }
+      aria-pressed={active}
+    >
+      {label}
+    </button>
+  );
+}
+
+function StudyPlannerTab() {
+  const sessions = [
+    {
+      time: "8:00-9:00",
+      type: "Self",
+      title: "Personal Time",
+      status: "Ended",
+      mood: "Neutral",
+    },
+    {
+      time: "9:00-10:00",
+      type: "Study",
+      title: "Math Review",
+      status: "START",
+    },
+    {
+      time: "10:00-11:00",
+      type: "Study",
+      title: "Work on Essay",
+      status: "WAIT",
+    },
+    {
+      time: "11:00-12:00",
+      type: "Study",
+      title: "Math Review",
+      status: "WAIT",
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        {sessions.map((s) => (
+          <div
+            key={`${s.time}-${s.title}`}
+            className="flex items-center justify-between gap-3 rounded border border-zinc-300 bg-white px-3 py-2 text-sm"
+          >
+            <button
+              type="button"
+              aria-label="Remove"
+              className="grid h-6 w-6 flex-none place-items-center rounded-full border border-zinc-400 bg-white text-zinc-700"
+            >
+              ×
+            </button>
+
+            <div className="min-w-0 flex-1 text-zinc-800">
+              [{s.time} {s.type}] {s.title} - [{s.status}]
+              {s.mood ? ` (${s.mood})` : ""}
+            </div>
+
+            <button
+              type="button"
+              className="flex-none text-xs font-medium underline text-zinc-800"
+            >
+              [View Desc]
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded border border-zinc-300 bg-white p-4">
+        <div className="mb-3 text-sm font-semibold text-zinc-900">New Task</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            className="h-9 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+            defaultValue=""
+            aria-label="Category"
+          >
+            <option value="" disabled>
+              Category
+            </option>
+            <option>Study</option>
+            <option>Self</option>
+            <option>Work</option>
+          </select>
+          <input
+            className="h-9 w-44 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+            placeholder="Task Label"
+            aria-label="Task Label"
+          />
+          <input
+            className="h-9 w-56 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+            placeholder="Task Description"
+            aria-label="Task Description"
+          />
+          <input
+            className="h-9 w-36 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
+            placeholder="Task Date"
+            aria-label="Task Date"
+          />
+          <button
+            type="button"
+            className="h-9 rounded border border-zinc-400 bg-white px-4 text-sm font-medium text-zinc-900"
+          >
+            Create
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded border border-zinc-300 bg-white p-4">
+        <div className="text-sm font-semibold text-zinc-900">Work Balance</div>
+        <div className="mt-4 flex items-end gap-10">
+          <div className="flex flex-col items-center gap-2">
+            <div className="text-xs text-zinc-700">75</div>
+            <div className="h-44 w-12 rounded border border-zinc-300 bg-zinc-50 p-1">
+              <div className="h-[75%] w-full rounded bg-zinc-200" />
+            </div>
+            <div className="text-xs font-medium text-zinc-800">Study</div>
+          </div>
+
+          <div className="flex flex-col items-center gap-2">
+            <div className="text-xs text-zinc-700">25</div>
+            <div className="h-44 w-12 rounded border border-zinc-300 bg-zinc-50 p-1">
+              <div className="h-[25%] w-full rounded bg-zinc-200" />
+            </div>
+            <div className="text-xs font-medium text-zinc-800">Self</div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="mt-4 text-sm font-medium text-zinc-800"
+        >
+          + Add New Category
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
+  const tabs = [
+    "Study Planner",
+    "Breakdown wizard",
+    "Mood Tracker",
+    "Guided Notes",
+  ];
+  const [activeTab, setActiveTab] = React.useState("Study Planner");
+
   return (
     <div className="min-h-screen w-full bg-white text-foreground">
       <div className="min-h-screen w-full bg-white">
@@ -57,26 +216,24 @@ export default function DashboardPage() {
 
               <div className="mt-6">
                 <div className="flex flex-wrap gap-2 border-b border-zinc-300 pb-2">
-                  {[
-                    "Study Planner",
-                    "Breakdown wizard",
-                    "Mood Tracker",
-                    "Guided Notes",
-                  ].map((label) => (
-                    <button
+                  {tabs.map((label) => (
+                    <TabButton
                       key={label}
-                      type="button"
-                      className="rounded border border-zinc-400 bg-white px-3 py-2 text-xs font-medium text-zinc-800"
-                    >
-                      {label}
-                    </button>
+                      label={label}
+                      active={activeTab === label}
+                      onClick={() => setActiveTab(label)}
+                    />
                   ))}
                 </div>
 
-                <div className="mt-4 rounded border border-zinc-400 bg-white p-10">
-                  <div className="text-center text-lg font-semibold text-zinc-800">
-                    [Tab Content Shown]
-                  </div>
+                <div className="mt-4 rounded border border-zinc-400 bg-white p-6">
+                  {activeTab === "Study Planner" ? (
+                    <StudyPlannerTab />
+                  ) : (
+                    <div className="py-12 text-center text-lg font-semibold text-zinc-800">
+                      [Tab Content Shown]
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

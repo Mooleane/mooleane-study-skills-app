@@ -25,11 +25,6 @@ function buildPrompt(payload) {
   const topCategory = String(payload?.topCategory ?? "").trim();
   const hasUpcomingAssignment = Boolean(payload?.hasUpcomingAssignment);
 
-  const assignment = payload?.assignment ?? {};
-  const taskName = String(assignment?.taskName ?? "").trim();
-  const taskDate = String(assignment?.taskDate ?? "").trim();
-  const priority = String(assignment?.priority ?? "").trim();
-
   const moodLines = moods
     .slice(0, 30)
     .map((m) => {
@@ -47,16 +42,12 @@ function buildPrompt(payload) {
   return [
     "You are a helpful study-skills assistant.",
     "Return ONLY valid JSON in this exact shape (no extra keys, no markdown):",
-    '{"breakdownSteps":["Step 1 (30m)"],"moodCorrelations":["..."],"moodSummary":"...","quickCheck":{"mood":"...","balance":"...","tip":"..."}}',
+    '{"moodCorrelations":["..."],"moodSummary":"...","quickCheck":{"mood":"...","balance":"...","tip":"..."}}',
     "Rules:",
-    "- breakdownSteps: 4 to 6 steps. Each includes minutes like (30m). If no taskName provided, return an empty array.",
     "- moodCorrelations: 2 to 5 short, data-based bullets.",
     "- moodSummary: ONE sentence, <= 12 words.",
     "- quickCheck.mood/balance/tip: each <= 10 words; tip is actionable and supportive.",
     "Inputs:",
-    taskName ? `- Assignment name: ${taskName}` : "- Assignment name: (none)",
-    taskDate ? `- Assignment date: ${taskDate}` : "- Assignment date: (none)",
-    priority ? `- Assignment priority: ${priority}` : "- Assignment priority: (none)",
     topCategory ? `- Top category: ${topCategory}` : "- Top category: (unknown)",
     `- Has upcoming assignment session: ${hasUpcomingAssignment ? "yes" : "no"}`,
     countsLines ? `Task counts:\n${countsLines}` : "Task counts: (none)",
@@ -114,7 +105,6 @@ export async function POST(req) {
 
     return NextResponse.json({
       generatedAt: Date.now(),
-      breakdownSteps: clampArrayStrings(parsed?.breakdownSteps, 6),
       moodCorrelations: clampArrayStrings(parsed?.moodCorrelations, 5),
       moodSummary:
         typeof parsed?.moodSummary === "string" ? parsed.moodSummary.trim() : "",

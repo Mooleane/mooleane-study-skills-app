@@ -748,6 +748,9 @@ function BreakdownWizardTab({
   onChangePriority,
   steps,
   showGenerateHint,
+  onGenerate,
+  isGenerating,
+  generateError,
   onEditStep,
   onDeleteStep,
   onAssignStep,
@@ -824,24 +827,26 @@ function BreakdownWizardTab({
             type="button"
             className={
               "rounded border border-zinc-400 bg-white px-4 py-2 text-xs font-medium " +
-              (taskName.trim()
+              (taskName.trim() && !isGenerating
                 ? "text-zinc-800"
                 : "text-zinc-400")
             }
-            onClick={() => {
-              // Suggestions are generated only via the sidebar button.
-            }}
-            disabled
-            aria-disabled
+            onClick={onGenerate}
+            disabled={!taskName.trim() || isGenerating}
+            aria-disabled={!taskName.trim() || isGenerating}
             title={
-              showGenerateHint
-                ? "Use Regenerate Suggestions in the sidebar"
-                : ""
+              taskName.trim()
+                ? "Generate steps using AI"
+                : "Enter a task name first"
             }
           >
-            Generate
+            {isGenerating ? "Generating…" : "Generate"}
           </button>
         </div>
+
+        {generateError ? (
+          <div className="mt-2 text-xs text-zinc-700">{generateError}</div>
+        ) : null}
 
         {showGenerateHint ? (
           <div className="mt-2 text-xs text-zinc-700">
@@ -1156,6 +1161,7 @@ function GuidedNotesTab({ moodSummary, topCategory, hasUpcomingAssignment }) {
 
 function DashboardPageInner() {
   const AI_BUNDLE_KEY = "mytime.aiBundle";
+  const BREAKDOWN_KEY = "mytime.breakdownSteps";
   const tabs = [
     "Study Planner",
     "Breakdown wizard",
@@ -1177,7 +1183,6 @@ function DashboardPageInner() {
   const aiFallback = React.useMemo(
     () => ({
       generatedAt: null,
-      breakdownSteps: [],
       moodCorrelations: ["Mostly Inconclusive", "Might Like Weekends More"],
       moodSummary: "",
       quickCheck: {
@@ -1190,6 +1195,10 @@ function DashboardPageInner() {
   );
 
   const [aiBundle, setAiBundle] = React.useState(aiFallback);
+
+  const [breakdownSteps, setBreakdownSteps] = React.useState([]);
+  const [isGeneratingBreakdown, setIsGeneratingBreakdown] = React.useState(false);
+  const [breakdownError, setBreakdownError] = React.useState("");
 
   const [isRegenerating, setIsRegenerating] = React.useState(false);
   const [regenError, setRegenError] = React.useState("");
@@ -1244,9 +1253,6 @@ function DashboardPageInner() {
         setAiBundle((prev) => ({
           ...prev,
           generatedAt: storedBundle.generatedAt ?? prev.generatedAt,
-          breakdownSteps: Array.isArray(storedBundle.breakdownSteps)
-            ? storedBundle.breakdownSteps
-            : prev.breakdownSteps,
           moodCorrelations: Array.isArray(storedBundle.moodCorrelations)
             ? storedBundle.moodCorrelations
             : prev.moodCorrelations,
@@ -1269,6 +1275,17 @@ function DashboardPageInner() {
                 : prev.quickCheck.tip,
           },
         }));
+      }
+
+      const storedBreakdown = safeParseJson(
+        window.localStorage.getItem(BREAKDOWN_KEY),
+        null
+      );
+      if (storedBreakdown && typeof storedBreakdown === "object") {
+        const maybe = storedBreakdown.steps;
+        if (Array.isArray(maybe) && maybe.length > 0) {
+          setBreakdownSteps(maybe);
+        }
       }
     } catch {
       // ignore
@@ -1396,11 +1413,6 @@ function DashboardPageInner() {
         topCategory,
         taskCounts,
         hasUpcomingAssignment,
-        assignment: {
-          taskName: breakdownTaskName,
-          taskDate: breakdownTaskDate,
-          priority: breakdownPriority,
-        },
       };
 
       const res = await fetch("/api/suggestions", {
@@ -1414,18 +1426,25 @@ function DashboardPageInner() {
         throw new Error(data?.error || "Failed to regenerate suggestions.");
       }
 
-      setAiBundle((prev) => ({
-        ...prev,
-        ...data,
+      const nextBundle = {
+        generatedAt: data?.generatedAt ?? Date.now(),
+        moodCorrelations: Array.isArray(data?.moodCorrelations)
+          ? data.moodCorrelations
+          : aiBundle.moodCorrelations,
+        moodSummary:
+          typeof data?.moodSummary === "string"
+            ? data.moodSummary
+            : aiBundle.moodSummary,
         quickCheck: {
-          mood: data?.quickCheck?.mood ?? prev.quickCheck.mood,
-          balance: data?.quickCheck?.balance ?? prev.quickCheck.balance,
-          tip: data?.quickCheck?.tip ?? prev.quickCheck.tip,
+          mood: data?.quickCheck?.mood ?? aiBundle.quickCheck.mood,
+          balance: data?.quickCheck?.balance ?? aiBundle.quickCheck.balance,
+          tip: data?.quickCheck?.tip ?? aiBundle.quickCheck.tip,
         },
-      }));
+      };
 
+      setAiBundle(nextBundle);
       try {
-        window.localStorage.setItem(AI_BUNDLE_KEY, JSON.stringify(data));
+        window.localStorage.setItem(AI_BUNDLE_KEY, JSON.stringify(nextBundle));
       } catch {
         // ignore
       }
@@ -1433,6 +1452,48 @@ function DashboardPageInner() {
       setRegenError(e?.message || "Failed to regenerate suggestions.");
     } finally {
       setIsRegenerating(false);
+    }
+  }
+
+  async function generateBreakdownSteps() {
+    const trimmedName = breakdownTaskName.trim();
+    if (!trimmedName) return;
+
+    setIsGeneratingBreakdown(true);
+    setBreakdownError("");
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          taskName: trimmedName,
+          taskDate: breakdownTaskDate.trim(),
+          priority: breakdownPriority.trim(),
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to generate steps.");
+      }
+
+      const nextSteps = Array.isArray(data?.steps) ? data.steps : [];
+      const finalSteps = nextSteps.length > 0 ? nextSteps : DEFAULT_BREAKDOWN_STEPS;
+      setBreakdownSteps(finalSteps);
+
+      try {
+        window.localStorage.setItem(
+          BREAKDOWN_KEY,
+          JSON.stringify({ steps: finalSteps })
+        );
+      } catch {
+        // ignore
+      }
+    } catch (e) {
+      setBreakdownError(e?.message || "Failed to generate steps.");
+    } finally {
+      setIsGeneratingBreakdown(false);
     }
   }
 
@@ -1501,9 +1562,7 @@ function DashboardPageInner() {
   }
 
   function getCurrentBreakdownSteps() {
-    const current = Array.isArray(aiBundle.breakdownSteps)
-      ? aiBundle.breakdownSteps
-      : [];
+    const current = Array.isArray(breakdownSteps) ? breakdownSteps : [];
     return current.length > 0 ? current : DEFAULT_BREAKDOWN_STEPS;
   }
 
@@ -1529,16 +1588,20 @@ function DashboardPageInner() {
     const idx = Number(stepIndex);
     if (!Number.isFinite(idx)) return;
 
-    setAiBundle((prev) => {
-      const currentRaw = Array.isArray(prev.breakdownSteps)
-        ? prev.breakdownSteps
-        : [];
+    setBreakdownSteps((prev) => {
+      const currentRaw = Array.isArray(prev) ? prev : [];
       const base = currentRaw.length > 0 ? currentRaw : DEFAULT_BREAKDOWN_STEPS;
       if (idx < 0 || idx >= base.length) return prev;
       const nextSteps = base.map((s, i) => (i === idx ? nextText : s));
-      const next = { ...prev, breakdownSteps: nextSteps };
-      persistAiBundle(next);
-      return next;
+      try {
+        window.localStorage.setItem(
+          BREAKDOWN_KEY,
+          JSON.stringify({ steps: nextSteps })
+        );
+      } catch {
+        // ignore
+      }
+      return nextSteps;
     });
   }
 
@@ -1546,16 +1609,20 @@ function DashboardPageInner() {
     const idx = Number(stepIndex);
     if (!Number.isFinite(idx)) return;
 
-    setAiBundle((prev) => {
-      const currentRaw = Array.isArray(prev.breakdownSteps)
-        ? prev.breakdownSteps
-        : [];
+    setBreakdownSteps((prev) => {
+      const currentRaw = Array.isArray(prev) ? prev : [];
       const base = currentRaw.length > 0 ? currentRaw : DEFAULT_BREAKDOWN_STEPS;
       if (idx < 0 || idx >= base.length) return prev;
       const nextSteps = base.filter((_, i) => i !== idx);
-      const next = { ...prev, breakdownSteps: nextSteps };
-      persistAiBundle(next);
-      return next;
+      try {
+        window.localStorage.setItem(
+          BREAKDOWN_KEY,
+          JSON.stringify({ steps: nextSteps })
+        );
+      } catch {
+        // ignore
+      }
+      return nextSteps;
     });
   }
 
@@ -1801,8 +1868,11 @@ function DashboardPageInner() {
                       onChangeTaskName={setBreakdownTaskName}
                       onChangeTaskDate={setBreakdownTaskDate}
                       onChangePriority={setBreakdownPriority}
-                      steps={aiBundle.breakdownSteps}
-                      showGenerateHint
+                      steps={breakdownSteps}
+                      showGenerateHint={false}
+                      onGenerate={generateBreakdownSteps}
+                      isGenerating={isGeneratingBreakdown}
+                      generateError={breakdownError}
                       onEditStep={editBreakdownStep}
                       onDeleteStep={deleteBreakdownStep}
                       onAssignStep={assignBreakdownStepToPlanner}

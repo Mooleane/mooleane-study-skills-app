@@ -1,3 +1,5 @@
+import SidebarNav from "../components/SidebarNav";
+
 export default function Home() {
   return (
     <div className="min-h-screen w-full bg-white text-foreground">
@@ -9,28 +11,7 @@ export default function Home() {
 
         {/* Main content area */}
         <div className="flex min-h-[calc(100vh-49px)]">
-          <aside className="w-56 border-r border-zinc-300 bg-zinc-50 px-4 py-5">
-            <div className="mb-4 text-sm font-semibold text-zinc-800">MyTime</div>
-            <nav aria-label="Primary" className="flex flex-col gap-2">
-              {[
-                { label: "Home", href: "/" },
-                { label: "About", href: "/about" },
-                { label: "Why MyTime?", href: "/why-mytime" },
-                { label: "Key Features", href: "/key-features" },
-                { label: "Dashboard", href: "#" },
-                { label: "Built Evidence", href: "#" },
-                { label: "Reflection", href: "#" },
-              ].map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="block rounded border border-zinc-400 bg-white px-3 py-2 text-sm text-zinc-800"
-                >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-          </aside>
+          <SidebarNav />
 
           <main className="flex-1 px-10 py-12">
             <div className="mx-auto max-w-2xl text-center">

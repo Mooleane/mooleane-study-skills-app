@@ -182,7 +182,7 @@ function StudyPlannerTab({
           />
           <input
             className="h-9 w-36 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-800"
-            placeholder="Task Date"
+            type="date"
             aria-label="Task Date"
             value={date}
             onChange={(e) => setDate(e.target.value)}

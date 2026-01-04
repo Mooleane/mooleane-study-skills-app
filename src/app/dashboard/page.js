@@ -849,54 +849,14 @@ function BreakdownWizardTab() {
   );
 }
 
-function MoodTrackerTab() {
+function MoodTrackerTab({
+  timeline,
+  correlations,
+  onRecordMood,
+  onDeleteMoodEntry,
+}) {
   const [selectedMood, setSelectedMood] = React.useState("");
   const [note, setNote] = React.useState("");
-  const [timeline, setTimeline] = React.useState(() => {
-    if (typeof window === "undefined") return [];
-    const stored = safeParseJson(
-      window.localStorage.getItem("mytime.moods"),
-      []
-    );
-    return Array.isArray(stored) ? stored : [];
-  });
-
-  React.useEffect(() => {
-    try {
-      window.localStorage.setItem("mytime.moods", JSON.stringify(timeline));
-    } catch {
-      // ignore
-    }
-  }, [timeline]);
-
-  function recordMood() {
-    const mood = selectedMood.trim();
-    if (!mood) return;
-
-    const now = Date.now();
-    const dateLabel = (() => {
-      const parts = new Date(now).toDateString().split(" ");
-      return `${parts[0]} ${parts[1]} ${parts[2]}`;
-    })();
-
-    const entry = {
-      id: getId(),
-      createdAt: now,
-      date: dateLabel,
-      mood,
-      note: note.trim(),
-    };
-
-    setTimeline((prev) => [entry, ...prev]);
-    setSelectedMood("");
-    setNote("");
-  }
-
-  function deleteMoodEntry(id) {
-    setTimeline((prev) => prev.filter((e) => e.id !== id));
-  }
-
-  const correlations = ["Mostly Inconclusive", "Might Like Weekends More"];
 
   return (
     <div className="space-y-6">
@@ -932,7 +892,13 @@ function MoodTrackerTab() {
           <button
             type="button"
             className="h-9 rounded border border-zinc-400 bg-white px-4 text-sm font-medium text-zinc-900"
-            onClick={recordMood}
+            onClick={() => {
+              const mood = selectedMood.trim();
+              if (!mood) return;
+              onRecordMood({ mood, note: note.trim() });
+              setSelectedMood("");
+              setNote("");
+            }}
             disabled={!selectedMood.trim()}
             aria-disabled={!selectedMood.trim()}
           >
@@ -959,7 +925,7 @@ function MoodTrackerTab() {
               <button
                 type="button"
                 className="flex-none text-xs font-medium underline text-zinc-800"
-                onClick={() => deleteMoodEntry(t.id)}
+                onClick={() => onDeleteMoodEntry(t.id)}
               >
                 Delete
               </button>
@@ -982,7 +948,7 @@ function MoodTrackerTab() {
   );
 }
 
-function GuidedNotesTab() {
+function GuidedNotesTab({ moodSummary, topCategory, hasUpcomingAssignment }) {
   const recentActivity = [
     "Mood: Mostly Neutral",
     "Mostly Studying",
@@ -1062,11 +1028,20 @@ function GuidedNotesTab() {
 
       <section className="rounded border border-zinc-300 bg-white p-4">
         <div className="text-sm font-semibold text-zinc-900">Suggested Tips</div>
-        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-zinc-800">
-          {suggestedTips.map((t) => (
-            <li key={t}>{t}</li>
-          ))}
-        </ul>
+        <div className="mt-3 text-sm text-zinc-800">
+          <div>
+            <span className="font-semibold">Mood:</span>{" "}
+            {moodSummary || "(No mood entries yet)"}
+          </div>
+          <div className="mt-2">
+            <span className="font-semibold">Mostly:</span>{" "}
+            {topCategory || "(No tasks yet)"}
+          </div>
+          <div className="mt-2">
+            <span className="font-semibold">Assignment:</span>{" "}
+            {hasUpcomingAssignment ? "Yes" : "No"}
+          </div>
+        </div>
       </section>
     </div>
   );
@@ -1097,6 +1072,15 @@ export default function DashboardPage() {
     if (typeof window === "undefined") return [];
     const stored = safeParseJson(
       window.localStorage.getItem("mytime.tasks"),
+      []
+    );
+    return Array.isArray(stored) ? stored : [];
+  });
+
+  const [moods, setMoods] = React.useState(() => {
+    if (typeof window === "undefined") return [];
+    const stored = safeParseJson(
+      window.localStorage.getItem("mytime.moods"),
       []
     );
     return Array.isArray(stored) ? stored : [];
@@ -1147,6 +1131,14 @@ export default function DashboardPage() {
 
   React.useEffect(() => {
     try {
+      window.localStorage.setItem("mytime.moods", JSON.stringify(moods));
+    } catch {
+      // ignore
+    }
+  }, [moods]);
+
+  React.useEffect(() => {
+    try {
       if (!activeSession) {
         window.localStorage.removeItem("mytime.activeSession");
       } else {
@@ -1187,6 +1179,113 @@ export default function DashboardPage() {
       .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
       .slice(0, 3);
   }, [tasks]);
+
+  const taskCounts = React.useMemo(() => {
+    return computeCategoryCounts(categories, tasks);
+  }, [categories, tasks]);
+
+  const topCategory = React.useMemo(() => {
+    const entries = Object.entries(taskCounts);
+    if (entries.length === 0) return "";
+    let best = { category: "", count: -1 };
+    for (const [categoryName, count] of entries) {
+      const n = Number(count) || 0;
+      if (n > best.count) best = { category: categoryName, count: n };
+    }
+    return best.count > 0 ? best.category : (categories[0] ?? "");
+  }, [taskCounts, categories]);
+
+  const hasUpcomingAssignment = React.useMemo(() => {
+    return tasks.some((t) => {
+      if (!t || t.endedAt) return false;
+      const startMs = combineDateAndTimeToMs(t.date, t.startTime);
+      return startMs != null && nowMs < startMs;
+    });
+  }, [tasks, nowMs]);
+
+  const [aiMoodCorrelations, setAiMoodCorrelations] = React.useState([
+    "Mostly Inconclusive",
+    "Might Like Weekends More",
+  ]);
+  const [aiMoodSummary, setAiMoodSummary] = React.useState("");
+  const [aiQuickCheck, setAiQuickCheck] = React.useState({
+    mood: "Mostly Neutral",
+    balance: "A lot of studying",
+    tip: "Free more time for yourself",
+  });
+
+  async function fetchInsights(mode, payload) {
+    const res = await fetch("/api/insights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode, payload }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || "AI request failed");
+    return data;
+  }
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const payload = {
+          moods,
+          topCategory,
+          taskCounts,
+        };
+
+        const [corr, summary, quick] = await Promise.all([
+          fetchInsights("moodCorrelations", payload),
+          fetchInsights("moodSummary", payload),
+          fetchInsights("quickCheck", payload),
+        ]);
+
+        if (cancelled) return;
+
+        if (Array.isArray(corr?.bullets) && corr.bullets.length > 0) {
+          setAiMoodCorrelations(corr.bullets);
+        }
+        if (typeof summary?.summary === "string") {
+          setAiMoodSummary(summary.summary);
+        }
+        if (quick && typeof quick === "object") {
+          setAiQuickCheck({
+            mood: quick.mood || aiQuickCheck.mood,
+            balance: quick.balance || aiQuickCheck.balance,
+            tip: quick.tip || aiQuickCheck.tip,
+          });
+        }
+      } catch {
+        // keep previous values
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // Intentionally avoid nowMs so we don't call AI every second.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moods, topCategory, categories, tasks]);
+
+  function recordMoodEntry({ mood, note }) {
+    const now = Date.now();
+    const parts = new Date(now).toDateString().split(" ");
+    const dateLabel = `${parts[0]} ${parts[1]} ${parts[2]}`;
+    const entry = {
+      id: getId(),
+      createdAt: now,
+      date: dateLabel,
+      mood,
+      note: String(note ?? "").trim(),
+    };
+    setMoods((prev) => [entry, ...prev]);
+  }
+
+  function deleteMoodEntry(id) {
+    setMoods((prev) => prev.filter((e) => e.id !== id));
+  }
 
   function addCategory(name) {
     const trimmed = name.trim();
@@ -1375,15 +1474,13 @@ export default function DashboardPage() {
                   </h2>
                   <div className="mt-2 rounded border border-zinc-400 bg-white p-4 text-sm text-zinc-800">
                     <p>
-                      <span className="font-semibold">Mood:</span> Mostly Neutral
+                      <span className="font-semibold">Mood:</span> {aiQuickCheck.mood}
                     </p>
                     <p className="mt-2">
-                      <span className="font-semibold">Balance:</span> A lot of
-                      studying
+                      <span className="font-semibold">Balance:</span> {aiQuickCheck.balance}
                     </p>
                     <p className="mt-2">
-                      <span className="font-semibold">Tip:</span> Free more time
-                      for yourself
+                      <span className="font-semibold">Tip:</span> {aiQuickCheck.tip}
                     </p>
                   </div>
                 </section>
@@ -1420,8 +1517,21 @@ export default function DashboardPage() {
                   {activeTab === "Breakdown wizard" ? (
                     <BreakdownWizardTab />
                   ) : null}
-                  {activeTab === "Mood Tracker" ? <MoodTrackerTab /> : null}
-                  {activeTab === "Guided Notes" ? <GuidedNotesTab /> : null}
+                  {activeTab === "Mood Tracker" ? (
+                    <MoodTrackerTab
+                      timeline={moods}
+                      correlations={aiMoodCorrelations}
+                      onRecordMood={recordMoodEntry}
+                      onDeleteMoodEntry={deleteMoodEntry}
+                    />
+                  ) : null}
+                  {activeTab === "Guided Notes" ? (
+                    <GuidedNotesTab
+                      moodSummary={aiMoodSummary}
+                      topCategory={topCategory}
+                      hasUpcomingAssignment={hasUpcomingAssignment}
+                    />
+                  ) : null}
                   {activeTab !== "Study Planner" &&
                   activeTab !== "Breakdown wizard" &&
                   activeTab !== "Mood Tracker" &&

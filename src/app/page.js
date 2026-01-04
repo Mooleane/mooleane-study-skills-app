@@ -1,32 +1,32 @@
 export default function Home() {
   return (
-    <div className="min-h-screen bg-zinc-100 px-4 py-10 text-foreground">
-      <div className="mx-auto w-full max-w-5xl overflow-hidden rounded-md border border-zinc-300 bg-white">
+    <div className="min-h-screen w-full bg-white text-foreground">
+      <div className="min-h-screen w-full bg-white">
         {/* Page title strip (from wireframe) */}
         <div className="border-b border-zinc-300 bg-zinc-100 px-6 py-3 text-center">
           <div className="text-sm font-semibold tracking-wide text-zinc-700">Home</div>
         </div>
 
         {/* Main content area */}
-        <div className="flex">
+        <div className="flex min-h-[calc(100vh-49px)]">
           <aside className="w-56 border-r border-zinc-300 bg-zinc-50 px-4 py-5">
             <div className="mb-4 text-sm font-semibold text-zinc-800">MyTime</div>
             <nav aria-label="Primary" className="flex flex-col gap-2">
               {[
-                "Home",
-                "About",
-                "Why MyTime?",
-                "Key Features",
-                "Dashboard",
-                "Built Evidence",
-                "Reflection",
-              ].map((label) => (
+                { label: "Home", href: "/" },
+                { label: "About", href: "/about" },
+                { label: "Why MyTime?", href: "/why-mytime" },
+                { label: "Key Features", href: "#" },
+                { label: "Dashboard", href: "#" },
+                { label: "Built Evidence", href: "#" },
+                { label: "Reflection", href: "#" },
+              ].map((item) => (
                 <a
-                  key={label}
-                  href="#"
+                  key={item.label}
+                  href={item.href}
                   className="block rounded border border-zinc-400 bg-white px-3 py-2 text-sm text-zinc-800"
                 >
-                  {label}
+                  {item.label}
                 </a>
               ))}
             </nav>

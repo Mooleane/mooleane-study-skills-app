@@ -1,4 +1,5 @@
 import SidebarNav from "../components/SidebarNav";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -34,18 +35,18 @@ export default function Home() {
               </p>
 
               <div className="mt-10 flex items-center justify-center gap-4">
-                <button
-                  type="button"
+                <Link
+                  href="/dashboard"
                   className="rounded border border-zinc-500 bg-white px-5 py-2 text-sm font-medium text-zinc-900"
                 >
                   Try it out
-                </button>
-                <button
-                  type="button"
+                </Link>
+                <Link
+                  href="/key-features"
                   className="rounded border border-zinc-500 bg-white px-5 py-2 text-sm font-medium text-zinc-900"
                 >
                   View Features
-                </button>
+                </Link>
               </div>
             </div>
           </main>
